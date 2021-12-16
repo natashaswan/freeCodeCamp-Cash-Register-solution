@@ -1,0 +1,109 @@
+function checkCashRegister(price, cash, cid) {
+    //creating an array of arrays to store bills' denomination and their names
+    //i decided to stick to the same format i.e. array of arrays, that way the indexes in cid and denomArr match
+    const denomArr = [
+        ["PENNY", 0.01],
+        ["NICKEL", 0.05],
+        ["DIME", 0.1],
+        ["QUARTER", 0.25],
+        ["ONE", 1],
+        ["FIVE", 5],
+        ["TEN", 10],
+        ["TWENTY", 20],
+        ["ONE HUNDRED", 100]
+    ]
+
+    //calculating change
+    let change = cash - price;
+    
+    //this function returns an index of the greatest bill with which we can give change e.g. if change is $19.75, the greatest bill we can give is $10
+    function findIndex(cid, denomArr, change){
+        for (let i=denomArr.length-1; i>=0;i--){
+            if (denomArr[i][1] < change){
+                for (let j=0; j<=cid.length; j++){
+                    if(denomArr[i][0] == cid[j][0]){
+                        return j
+                    }
+                }              
+            }
+        }
+    }
+    
+  //this is the main function that does the trick, 
+  //it iterates over cid starting with the greatest bill that we can give change with  
+  //calculates how much is to give with each bill
+  //returns an array of arrays that store the name of the bill and the amount we gave
+  function amendCidtoGiveChange(cid, denomArr, index, change){
+    let resArr = [];
+    changeGiven = 0;
+      
+    for (let i = index; i>=0; i--){
+        if (change > 0){
+            while (cid[i][1] >= denomArr[i][1] && change >= denomArr[i][1]){
+                change -= denomArr[i][1];
+                cid[i][1] -= denomArr[i][1];
+                changeGiven += denomArr[i][1];
+                change.toFixed(2);
+            } 
+            cid[i][1]=changeGiven;
+            if (changeGiven > 0){
+            resArr.push(cid[i]);
+            }
+            changeGiven = 0;
+        }
+    }
+          return resArr
+ }
+
+
+  //calculating the total amount in cid
+  let sumOfCid = 0;
+  //concatenating to flatten the array of arrays
+  let concatCid = [].concat.apply([], cid);
+  //do the calculation  
+  for (let i = 0; i<=concatCid.length; i++){
+      if (typeof concatCid[i] == "number"){
+      sumOfCid += concatCid[i];
+      }
+  }
+  //rounding the amount
+  sumOfCid = (sumOfCid.toFixed(2));
+    
+  //FIRST CASE: change is more than we have in cid
+  if (change > sumOfCid) {
+      return {status: "INSUFFICIENT_FUNDS", change: []} 
+  
+  //SECOND CASE: change is equal to what we have in cid
+  } else if (change == sumOfCid) {
+      return {status: "CLOSED", change: [cid]}
+
+  //THIRD CASE: change is less than what we have in cid i.e. we can give change
+  
+  } else {
+          //calling the function to calculate index
+          let index = findIndex(cid, denomArr, change);
+          //calling the function to calculate change to give
+          let changeToGive = amendCidtoGiveChange(cid, denomArr, index, change);
+          
+           //the code below compares the amount of change given with the amount of change expected and
+          //returns INSUFFICIENT_FUNDS if the latter is greater. This is the case when we seem to have enough 
+          //change in cid but can only give it with PENNY and according to the testing on freeCodeCamp, 
+          //the code should return INSUFFICIENT_FUNDS in this case, as PENNY rounds to a lower than 0.01.
+         
+          let merged = [].concat.apply([], changeToGive);
+          let sumOfmerged = 0;
+          for (let i = 0; i<=merged.length; i++){
+            if (typeof merged[i]== "number"){
+              sumOfmerged+=merged[i];
+            }
+          }
+
+          if (sumOfmerged+0.01 < change){
+            return {status: "INSUFFICIENT_FUNDS", change: []}
+          }
+          else {
+              return {status: "OPEN", change: changeToGive}
+          }
+
+  }
+           
